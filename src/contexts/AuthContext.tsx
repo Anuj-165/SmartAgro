@@ -1,10 +1,15 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase, Profile } from '../lib/supabase';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'farmer' | 'ngo' | 'admin';
+  created_at: string;
+}
 
 interface AuthContextType {
   user: User | null;
-  profile: Profile | null;
   loading: boolean;
   signUp: (email: string, password: string, name: string, role: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -15,71 +20,31 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      (async () => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await loadProfile(session.user.id);
-        } else {
-          setProfile(null);
-        }
-      })();
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const loadProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    } finally {
-      setLoading(false);
+    // Load user from localStorage on page load
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
     }
-  };
+    setLoading(false);
+  }, []);
 
   const signUp = async (email: string, password: string, name: string, role: string) => {
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const newUser: User = {
+        id: crypto.randomUUID(),
+        name,
         email,
-        password,
-      });
+        role: role as 'farmer' | 'ngo' | 'admin',
+        created_at: new Date().toISOString(),
+      };
 
-      if (authError) throw authError;
-
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            name,
-            email,
-            role,
-          });
-
-        if (profileError) throw profileError;
-      }
+      // Simulate account creation
+      localStorage.setItem('user', JSON.stringify(newUser));
+      localStorage.setItem('password', password); // just for mock demo (never store plain passwords in production)
+      setUser(newUser);
 
       return { error: null };
     } catch (error) {
@@ -89,12 +54,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const storedUser = localStorage.getItem('user');
+      const storedPassword = localStorage.getItem('password');
 
-      if (error) throw error;
+      if (!storedUser || !storedPassword) {
+        throw new Error('User not found');
+      }
+
+      if (password !== storedPassword) {
+        throw new Error('Invalid credentials');
+      }
+
+      const userData: User = JSON.parse(storedUser);
+      if (userData.email !== email) {
+        throw new Error('Invalid email');
+      }
+
+      setUser(userData);
       return { error: null };
     } catch (error) {
       return { error: error as Error };
@@ -102,13 +78,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('password');
+    setUser(null);
   };
 
   const value = {
     user,
-    profile,
     loading,
     signUp,
     signIn,
