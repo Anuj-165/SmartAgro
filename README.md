@@ -1,4 +1,4 @@
-#🌾 SmartAgro — Empowering Farmers with AI
+🌾 SmartAgro — Empowering Farmers with AI
 
 
 
