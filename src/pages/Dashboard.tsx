@@ -3,7 +3,7 @@ import { TrendingUp, Cloud, AlertTriangle, Droplets, Sun, Wind } from 'lucide-re
 import { useAuth } from '../contexts/AuthContext';
 
 export function Dashboard() {
-  const { profile } = useAuth();
+  const { user } = useAuth();
 
   const cropPrices = [
     { name: 'Wheat', price: 2450, change: '+5.2%', trend: 'up' },
@@ -36,7 +36,7 @@ export function Dashboard() {
           className="mb-8"
         >
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Welcome back, {profile?.name}!
+            Welcome back, {user?.name || 'Farmer'}!
           </h1>
           <p className="text-gray-600">Here's your farming overview for today</p>
         </motion.div>
@@ -69,7 +69,11 @@ export function Dashboard() {
                   >
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-gray-800">{crop.name}</h3>
-                      <span className={`text-sm font-medium ${crop.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                      <span
+                        className={`text-sm font-medium ${
+                          crop.trend === 'up' ? 'text-green-600' : 'text-red-600'
+                        }`}
+                      >
                         {crop.change}
                       </span>
                     </div>

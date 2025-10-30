@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Send, MapPin, AlertCircle, FileText, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
 
 export function HelpPortal() {
   const [name, setName] = useState('');
@@ -28,23 +27,17 @@ export function HelpPortal() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.from('help_requests').insert({
-        user_id: user?.id,
-        name,
-        location,
-        issue_type: issueType,
-        description,
-        status: 'pending',
-      });
+      // ✅ Mock form submission (simulate API delay)
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      if (error) throw error;
-
+      // ✅ On success, show confirmation
       setSuccess(true);
       setName('');
       setLocation('');
       setIssueType('crop_disease');
       setDescription('');
 
+      // Auto-hide success message after 5 seconds
       setTimeout(() => setSuccess(false), 5000);
     } catch (error) {
       console.error('Error submitting help request:', error);
@@ -65,7 +58,9 @@ export function HelpPortal() {
             <AlertCircle className="w-10 h-10 text-yellow-500 mr-3" />
             Help & NGO Portal
           </h1>
-          <p className="text-gray-600">Need assistance? Connect with NGOs and agricultural experts</p>
+          <p className="text-gray-600">
+            Need assistance? Connect with NGOs and agricultural experts
+          </p>
         </motion.div>
 
         <motion.div
@@ -89,9 +84,7 @@ export function HelpPortal() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
               <div className="relative">
                 <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
@@ -106,9 +99,7 @@ export function HelpPortal() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Location
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
@@ -123,9 +114,7 @@ export function HelpPortal() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Issue Type
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Issue Type</label>
               <select
                 value={issueType}
                 onChange={(e) => setIssueType(e.target.value)}
@@ -140,9 +129,7 @@ export function HelpPortal() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}

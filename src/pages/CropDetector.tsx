@@ -1,27 +1,28 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, Sparkles, Loader2, Camera, CheckCircle } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+
+type DiseaseResult = {
+  disease: string;
+  treatment: string;
+  confidence: number;
+};
 
 export function CropDetector() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [result, setResult] = useState<{
-    disease: string;
-    treatment: string;
-    confidence: number;
-  } | null>(null);
-  const { user } = useAuth();
+  const [analyzing, setAnalyzing] = useState<boolean>(false);
+  const [result, setResult] = useState<DiseaseResult | null>(null);
 
-  const diseases = [
-    { disease: 'Healthy Crop', treatment: 'Continue regular maintenance and monitoring', confidence: 95 },
-    { disease: 'Leaf Blight', treatment: 'Apply copper-based fungicide. Remove infected leaves. Ensure proper drainage.', confidence: 88 },
-    { disease: 'Powdery Mildew', treatment: 'Apply sulfur-based spray. Improve air circulation. Reduce humidity.', confidence: 92 },
-    { disease: 'Rust Disease', treatment: 'Use appropriate fungicide. Remove infected plants. Practice crop rotation.', confidence: 85 },
-    { disease: 'Bacterial Spot', treatment: 'Apply copper spray. Remove infected parts. Avoid overhead watering.', confidence: 90 },
+  // Mock disease data for simulation
+  const diseases: DiseaseResult[] = [
+    { disease: 'Healthy Crop', treatment: 'Continue regular maintenance and monitoring.', confidence: 95 },
+    { disease: 'Leaf Blight', treatment: 'Apply copper-based fungicide. Remove infected leaves.', confidence: 88 },
+    { disease: 'Powdery Mildew', treatment: 'Apply sulfur-based spray. Improve air circulation.', confidence: 92 },
+    { disease: 'Rust Disease', treatment: 'Use fungicide. Remove infected plants. Practice crop rotation.', confidence: 85 },
+    { disease: 'Bacterial Spot', treatment: 'Apply copper spray. Avoid overhead watering.', confidence: 90 },
   ];
 
+  // Handle file input selection
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -34,7 +35,8 @@ export function CropDetector() {
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  // Handle drag-and-drop upload
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
@@ -47,22 +49,14 @@ export function CropDetector() {
     }
   };
 
+  // Simulate AI crop analysis
   const analyzeImage = async () => {
     setAnalyzing(true);
+    await new Promise((resolve) => setTimeout(resolve, 2500));
 
-    await new Promise(resolve => setTimeout(resolve, 2500));
-
+    // Pick a random disease from the mock data
     const randomResult = diseases[Math.floor(Math.random() * diseases.length)];
     setResult(randomResult);
-
-    if (user) {
-      await supabase.from('crop_analyses').insert({
-        user_id: user.id,
-        predicted_disease: randomResult.disease,
-        treatment: randomResult.treatment,
-        confidence: randomResult.confidence,
-      });
-    }
 
     setAnalyzing(false);
   };
@@ -79,7 +73,9 @@ export function CropDetector() {
             <Sparkles className="w-10 h-10 text-yellow-500 mr-3" />
             AI Crop Detector
           </h1>
-          <p className="text-gray-600">Upload a photo of your crop to detect diseases and get treatment recommendations</p>
+          <p className="text-gray-600">
+            Upload a photo of your crop to detect diseases and get treatment recommendations
+          </p>
         </motion.div>
 
         <motion.div
@@ -89,6 +85,7 @@ export function CropDetector() {
           className="bg-white rounded-2xl shadow-2xl p-8"
         >
           {!selectedImage ? (
+            // Upload box
             <div
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
@@ -112,13 +109,10 @@ export function CropDetector() {
               </label>
             </div>
           ) : (
+            // After image selection
             <div className="space-y-6">
               <div className="relative rounded-xl overflow-hidden">
-                <img
-                  src={selectedImage}
-                  alt="Crop"
-                  className="w-full h-96 object-cover"
-                />
+                <img src={selectedImage} alt="Crop" className="w-full h-96 object-cover" />
               </div>
 
               <div className="flex gap-4">
@@ -180,7 +174,9 @@ export function CropDetector() {
                               className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full"
                             />
                           </div>
-                          <span className="text-lg font-bold text-green-700">{result.confidence}%</span>
+                          <span className="text-lg font-bold text-green-700">
+                            {result.confidence}%
+                          </span>
                         </div>
                       </div>
 

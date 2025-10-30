@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import { supabase, HelpRequest, Profile } from '../lib/supabase';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export function Admin() {
-  const [helpRequests, setHelpRequests] = useState<(HelpRequest & { profile?: Profile })[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [helpRequests, setHelpRequests] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'requests' | 'users'>('requests');
 
@@ -16,33 +15,68 @@ export function Admin() {
 
   const loadData = async () => {
     try {
-      const [requestsResult, profilesResult] = await Promise.all([
-        supabase
-          .from('help_requests')
-          .select('*')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: false }),
-      ]);
+      // Simulate API / DB fetch (from localStorage or mock data)
+      const storedRequests = JSON.parse(localStorage.getItem('help_requests') || '[]');
+      const storedProfiles = JSON.parse(localStorage.getItem('profiles') || '[]');
 
-      if (requestsResult.data) {
-        const requestsWithProfiles = await Promise.all(
-          requestsResult.data.map(async (request) => {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', request.user_id)
-              .maybeSingle();
-            return { ...request, profile };
-          })
-        );
+      // If no data exists, create mock ones
+      if (storedRequests.length === 0 || storedProfiles.length === 0) {
+        const mockProfiles = [
+          {
+            id: '1',
+            name: 'Ravi Kumar',
+            email: 'ravi@example.com',
+            role: 'farmer',
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: '2',
+            name: 'Neha Sharma',
+            email: 'neha@ngo.org',
+            role: 'ngo',
+            created_at: new Date().toISOString(),
+          },
+        ];
+
+        const mockRequests = [
+          {
+            id: '101',
+            user_id: '1',
+            name: 'Ravi Kumar',
+            location: 'Uttarakhand',
+            issue_type: 'crop_disease',
+            description: 'Leaves turning yellow rapidly',
+            status: 'pending',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          {
+            id: '102',
+            user_id: '2',
+            name: 'Neha Sharma',
+            location: 'Delhi NCR',
+            issue_type: 'water_shortage',
+            description: 'Need irrigation support in farms',
+            status: 'in_progress',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ];
+
+        localStorage.setItem('profiles', JSON.stringify(mockProfiles));
+        localStorage.setItem('help_requests', JSON.stringify(mockRequests));
+
+        setProfiles(mockProfiles);
+        setHelpRequests(mockRequests);
+      } else {
+        // Attach profile info to each request
+        const requestsWithProfiles = storedRequests.map((req: any) => ({
+          ...req,
+          profile: storedProfiles.find((p: any) => p.id === req.user_id),
+        }));
+
+        setProfiles(storedProfiles);
         setHelpRequests(requestsWithProfiles);
-      }
-
-      if (profilesResult.data) {
-        setProfiles(profilesResult.data);
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -53,13 +87,12 @@ export function Admin() {
 
   const updateRequestStatus = async (id: string, status: string) => {
     try {
-      const { error } = await supabase
-        .from('help_requests')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', id);
+      const updatedRequests = helpRequests.map((req) =>
+        req.id === id ? { ...req, status, updated_at: new Date().toISOString() } : req
+      );
 
-      if (error) throw error;
-      loadData();
+      setHelpRequests(updatedRequests);
+      localStorage.setItem('help_requests', JSON.stringify(updatedRequests));
     } catch (error) {
       console.error('Error updating request:', error);
     }
@@ -102,11 +135,7 @@ export function Admin() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">Admin Dashboard</h1>
           <p className="text-gray-600">Manage help requests and user accounts</p>
         </motion.div>
@@ -137,11 +166,7 @@ export function Admin() {
         </div>
 
         {activeTab === 'requests' ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-lg overflow-hidden"
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-green-600 to-green-700 text-white">
@@ -166,16 +191,12 @@ export function Admin() {
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-medium text-gray-800">{request.name}</p>
-                          {request.profile && (
-                            <p className="text-sm text-gray-500">{request.profile.email}</p>
-                          )}
+                          {request.profile && <p className="text-sm text-gray-500">{request.profile.email}</p>}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-gray-700">{request.location}</td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-gray-700 capitalize">
-                          {request.issue_type.replace('_', ' ')}
-                        </span>
+                        <span className="text-sm text-gray-700 capitalize">{request.issue_type.replace('_', ' ')}</span>
                       </td>
                       <td className="px-6 py-4">
                         <span
@@ -208,11 +229,7 @@ export function Admin() {
             </div>
           </motion.div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-lg overflow-hidden"
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-green-600 to-green-700 text-white">
