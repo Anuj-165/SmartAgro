@@ -49,7 +49,7 @@ Free Crop Price API
 
 
 # Clone the repository
-git clone https://github.com/yourusername/smartagro.git
+git clone https://github.com/Anuj-165/SmartAgro.git
 cd smartagro
 
 # Install dependencies
